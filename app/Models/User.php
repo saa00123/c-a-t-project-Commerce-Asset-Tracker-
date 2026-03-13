@@ -22,6 +22,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'workspace_id',
+        'role',
     ];
 
     /**
@@ -45,5 +47,17 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function workspace() {
+        return $this->belongsTo(Workspace::class);
+    }
+
+    public function comments() {
+        return $this->hasMany(Comment::class);
+    }
+
+    public function assetVersions() {
+        return $this->hasMany(AssetVersion::class, 'uploaded_by');
     }
 }
