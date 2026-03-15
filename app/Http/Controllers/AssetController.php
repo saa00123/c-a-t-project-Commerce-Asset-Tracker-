@@ -11,13 +11,32 @@ class AssetController extends Controller
 {
     public function index(Request $request)
     {
-        $assets = Asset::with('product')
+        $query = Asset::with('product')
             ->where('workspace_id', $request->user()->workspace_id)
-            ->latest()
-            ->get();
+            ->latest();
+
+        if ($request->has('search') && $request->search !== null) {
+            $query->where(function ($q) use ($request) {
+                $q->where('title', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('product', function ($q2) use ($request) {
+                        $q2->where('name', 'like', '%' . $request->search . '%');
+                    });
+            });
+        }
+
+        if ($request->has('type') && $request->type !== null) {
+            $query->where('type', $request->type);
+        }
+
+        if ($request->has('status') && $request->status !== null) {
+            $query->where('status', $request->status);
+        }
+
+        $assets = $query->paginate(10)->withQueryString();
 
         return Inertia::render('Assets/Index', [
-            'assets' => $assets
+            'assets' => $assets,
+            'filters' => $request->only(['search', 'type', 'status'])
         ]);
     }
 
@@ -35,14 +54,7 @@ class AssetController extends Controller
             'status' => 'DRAFT',
         ]);
 
-        return back();
-    }
-
-    public function destroy(Asset $asset)
-    {
-        $asset->delete();
-
-        return back();
+        return back()->with('success', 'Asset created successfully.');
     }
 
     public function show(Request $request, Asset $asset)
@@ -66,6 +78,51 @@ class AssetController extends Controller
 
         $asset->channels()->sync($validated['channel_ids'] ?? []);
 
-        return back();
+        return back()->with('success', 'Channels synced successfully.');
+    }
+
+    public function updateStatus(Request $request, Asset $asset)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:DRAFT,IN_PROGRESS,REVIEW,APPROVED,DEPLOYED'
+        ]);
+
+        $asset->update([
+            'status' => $validated['status']
+        ]);
+
+        return back()->with('success', 'Asset status updated successfully.');
+    }
+
+    public function destroy(Asset $asset)
+    {
+        $asset->delete();
+
+        return back()->with('success', 'Asset deleted successfully.');
+    }
+
+    public function updateCustomFields(Request $request, Asset $asset)
+    {
+        $validated = $request->validate([
+            'custom_fields' => 'nullable|array',
+            'custom_fields.*.key' => 'required|string|max:255',
+            'custom_fields.*.value' => 'required|string|max:255',
+        ]);
+
+        $formattedFields = [];
+
+        if (!empty($validated['custom_fields'])) {
+            foreach ($validated['custom_fields'] as $field) {
+                if (!empty($field['key'])) {
+                    $formattedFields[$field['key']] = $field['value'];
+                }
+            }
+        }
+
+        $asset->update([
+            'custom_fields' => $formattedFields
+        ]);
+
+        return back()->with('success', 'Custom fields updated successfully.');
     }
 }

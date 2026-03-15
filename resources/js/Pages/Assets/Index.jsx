@@ -1,12 +1,57 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, Link, useForm, router } from "@inertiajs/react";
 import ConfirmModal from "@/Components/ConfirmModal";
+import Pagination from "@/Components/Pagination";
+import CustomSelect from "@/Components/CustomSelect";
 import { useState } from "react";
 
-export default function Index({ assets }) {
+export default function Index({ assets, filters }) {
     const { delete: destroy, processing } = useForm();
     const [confirmingDeletion, setConfirmingDeletion] = useState(false);
     const [targetId, setTargetId] = useState(null);
+
+    const [searchTerm, setSearchTerm] = useState(filters.search || "");
+    const [typeFilter, setTypeFilter] = useState(filters.type || "");
+    const [statusFilter, setStatusFilter] = useState(filters.status || "");
+
+    const typeOptions = [
+        { value: "", label: "All Types" },
+        { value: "IMAGE", label: "Image" },
+        { value: "VIDEO", label: "Video" },
+    ];
+
+    const statusOptions = [
+        { value: "", label: "All Statuses" },
+        { value: "DRAFT", label: "Draft" },
+        { value: "IN_PROGRESS", label: "In Progress" },
+        { value: "REVIEW", label: "Review" },
+        { value: "APPROVED", label: "Approved" },
+        { value: "DEPLOYED", label: "Deployed" },
+    ];
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        router.get(
+            route("assets.index"),
+            { search: searchTerm, type: typeFilter, status: statusFilter },
+            { preserveState: true, replace: true },
+        );
+    };
+
+    const handleFilterChange = (key, value) => {
+        if (key === "type") setTypeFilter(value);
+        if (key === "status") setStatusFilter(value);
+
+        router.get(
+            route("assets.index"),
+            {
+                search: searchTerm,
+                type: key === "type" ? value : typeFilter,
+                status: key === "status" ? value : statusFilter,
+            },
+            { preserveState: true, replace: true },
+        );
+    };
 
     const confirmDelete = (id) => {
         setTargetId(id);
@@ -37,6 +82,44 @@ export default function Index({ assets }) {
             <Head title="Assets" />
 
             <div className="bg-white p-6 shadow-sm sm:rounded-lg">
+                <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <form
+                        onSubmit={handleSearch}
+                        className="flex w-full max-w-md gap-2"
+                    >
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Search asset title or product..."
+                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-cat-500 focus:ring-cat-500 sm:text-sm"
+                        />
+                        <button
+                            type="submit"
+                            className="inline-flex items-center rounded-md bg-gray-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                        >
+                            Search
+                        </button>
+                    </form>
+
+                    <div className="flex gap-2 w-full sm:w-auto z-10">
+                        <CustomSelect
+                            options={typeOptions}
+                            value={typeFilter}
+                            onChange={(val) => handleFilterChange("type", val)}
+                            placeholder="All Types"
+                        />
+                        <CustomSelect
+                            options={statusOptions}
+                            value={statusFilter}
+                            onChange={(val) =>
+                                handleFilterChange("status", val)
+                            }
+                            placeholder="All Statuses"
+                        />
+                    </div>
+                </div>
+
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm text-gray-500">
                         <thead className="bg-gray-50 text-xs uppercase text-gray-700">
@@ -52,18 +135,17 @@ export default function Index({ assets }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {assets.length === 0 ? (
+                            {assets.data.length === 0 ? (
                                 <tr>
                                     <td
                                         colSpan="6"
                                         className="px-6 py-8 text-center text-gray-500"
                                     >
-                                        No assets found. Go to a product to add
-                                        assets.
+                                        No assets found matching your criteria.
                                     </td>
                                 </tr>
                             ) : (
-                                assets.map((asset) => (
+                                assets.data.map((asset) => (
                                     <tr
                                         key={asset.id}
                                         className="border-b bg-white"
@@ -133,6 +215,8 @@ export default function Index({ assets }) {
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination links={assets.links} />
             </div>
 
             <ConfirmModal

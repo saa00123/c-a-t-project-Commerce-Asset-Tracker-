@@ -1,10 +1,74 @@
 import { Link, usePage } from "@inertiajs/react";
+import { useState, useEffect } from "react"; // 👈 추가
 
 export default function AuthenticatedLayout({ header, children }) {
-    const user = usePage().props.auth.user;
+    const { auth, flash, errors } = usePage().props;
+    const user = auth.user;
+
+    const [toast, setToast] = useState(null);
+
+    useEffect(() => {
+        if (flash.success) {
+            setToast({ type: "success", message: flash.success });
+        } else if (flash.error) {
+            setToast({ type: "error", message: flash.error });
+        } else if (Object.keys(errors).length > 0) {
+            setToast({
+                type: "error",
+                message: "입력하신 내용을 다시 확인해 주세요.",
+            });
+        }
+
+        if (flash.success || flash.error || Object.keys(errors).length > 0) {
+            const timer = setTimeout(() => setToast(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [flash, errors]);
 
     return (
-        <div className="flex h-screen bg-gray-100">
+        <div className="flex h-screen bg-gray-100 relative">
+            {/* 👇 화면 우측 하단에 고정되는 알림창 (Toast) UI 추가 */}
+            {toast && (
+                <div
+                    className={`fixed bottom-6 right-6 z-50 transform transition-all duration-300 rounded-md px-4 py-3 shadow-lg text-white font-medium ${
+                        toast.type === "success" ? "bg-cat-500" : "bg-red-500"
+                    }`}
+                >
+                    <div className="flex items-center space-x-2">
+                        {toast.type === "success" ? (
+                            <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M5 13l4 4L19 7"
+                                ></path>
+                            </svg>
+                        ) : (
+                            <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                ></path>
+                            </svg>
+                        )}
+                        <span>{toast.message}</span>
+                    </div>
+                </div>
+            )}
+
             <aside className="flex w-64 flex-col bg-cat-500">
                 <div className="flex h-16 items-center justify-center border-b border-cat-600">
                     <Link href="/">

@@ -18,10 +18,12 @@ class Asset extends Model
         'type',
         'status',
         'tags',
+        'custom_fields',
     ];
 
     protected $casts = [
         'tags' => 'array',
+        'custom_fields' => 'array',
     ];
 
     public function product()

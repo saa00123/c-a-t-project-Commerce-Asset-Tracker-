@@ -8,12 +8,20 @@ use Inertia\Inertia;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::latest()->get();
+        $query = Product::query()->latest();
+
+        if ($request->has('search') && $request->search !== null) {
+            $query->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('sku', 'like', '%' . $request->search . '%');
+        }
+
+        $products = $query->paginate(10)->withQueryString();
 
         return Inertia::render('Products/Index', [
-            'products' => $products
+            'products' => $products,
+            'filters' => $request->only('search')
         ]);
     }
 

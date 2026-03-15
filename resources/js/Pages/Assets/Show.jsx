@@ -1,14 +1,37 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, Link, useForm, router } from "@inertiajs/react";
 
 export default function Show({ asset, availableChannels }) {
-    const { data, setData, post, processing } = useForm({
+    const {
+        data: channelData,
+        setData: setChannelData,
+        post: postChannels,
+        processing: channelProcessing,
+    } = useForm({
         channel_ids: asset.channels.map((c) => c.id) || [],
     });
 
+    const initialCustomFields = asset.custom_fields
+        ? Object.entries(asset.custom_fields).map(([k, v]) => ({
+              key: k,
+              value: v,
+          }))
+        : [];
+
+    const {
+        data: cfData,
+        setData: setCfData,
+        patch: patchCf,
+        processing: cfProcessing,
+    } = useForm({
+        custom_fields: initialCustomFields,
+    });
+
+    const statuses = ["DRAFT", "IN_PROGRESS", "REVIEW", "APPROVED", "DEPLOYED"];
+
     const handleCheckboxChange = (e) => {
         const { value, checked } = e.target;
-        let newIds = [...data.channel_ids];
+        let newIds = [...channelData.channel_ids];
 
         if (checked) {
             newIds.push(value);
@@ -16,12 +39,50 @@ export default function Show({ asset, availableChannels }) {
             newIds = newIds.filter((id) => id !== value);
         }
 
-        setData("channel_ids", newIds);
+        setChannelData("channel_ids", newIds);
     };
 
-    const submit = (e) => {
+    const submitChannels = (e) => {
         e.preventDefault();
-        post(route("assets.channels.sync"), {
+        postChannels(route("assets.channels.sync", asset.id), {
+            preserveScroll: true,
+        });
+    };
+
+    const handleStatusChange = (e) => {
+        router.patch(
+            route("assets.status.update", asset.id),
+            {
+                status: e.target.value,
+            },
+            {
+                preserveScroll: true,
+            },
+        );
+    };
+
+    const addCustomField = () => {
+        setCfData("custom_fields", [
+            ...cfData.custom_fields,
+            { key: "", value: "" },
+        ]);
+    };
+
+    const removeCustomField = (index) => {
+        const newFields = [...cfData.custom_fields];
+        newFields.splice(index, 1);
+        setCfData("custom_fields", newFields);
+    };
+
+    const handleCfChange = (index, field, value) => {
+        const newFields = [...cfData.custom_fields];
+        newFields[index][field] = value;
+        setCfData("custom_fields", newFields);
+    };
+
+    const submitCustomFields = (e) => {
+        e.preventDefault();
+        patchCf(route("assets.custom_fields.update", asset.id), {
             preserveScroll: true,
         });
     };
@@ -79,9 +140,17 @@ export default function Show({ asset, availableChannels }) {
                                 <p className="text-sm font-medium text-gray-500">
                                     Status
                                 </p>
-                                <span className="mt-1 inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
-                                    {asset.status}
-                                </span>
+                                <select
+                                    value={asset.status}
+                                    onChange={handleStatusChange}
+                                    className="mt-1 block w-full rounded-md border-gray-300 py-1 pl-3 pr-8 text-sm focus:border-cat-500 focus:outline-none focus:ring-cat-500"
+                                >
+                                    {statuses.map((s) => (
+                                        <option key={s} value={s}>
+                                            {s.replace("_", " ")}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-gray-500">
@@ -94,6 +163,90 @@ export default function Show({ asset, availableChannels }) {
                                 </p>
                             </div>
                         </div>
+                    </div>
+
+                    <div className="bg-white p-6 shadow-sm sm:rounded-lg">
+                        <div className="flex items-center justify-between border-b pb-4 mb-4">
+                            <h3 className="text-lg font-medium text-gray-900">
+                                Custom Fields
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={addCustomField}
+                                className="text-sm font-medium text-cat-600 hover:text-cat-500"
+                            >
+                                + Add Field
+                            </button>
+                        </div>
+                        <form
+                            onSubmit={submitCustomFields}
+                            className="space-y-4"
+                        >
+                            {cfData.custom_fields.length === 0 ? (
+                                <p className="text-sm text-gray-500 text-center py-4">
+                                    No custom fields added yet.
+                                </p>
+                            ) : (
+                                cfData.custom_fields.map((field, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <input
+                                            type="text"
+                                            value={field.key}
+                                            onChange={(e) =>
+                                                handleCfChange(
+                                                    index,
+                                                    "key",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder="Key (e.g. Director)"
+                                            className="w-1/3 rounded-md border-gray-300 shadow-sm focus:border-cat-500 focus:ring-cat-500 sm:text-sm"
+                                            required
+                                        />
+                                        <input
+                                            type="text"
+                                            value={field.value}
+                                            onChange={(e) =>
+                                                handleCfChange(
+                                                    index,
+                                                    "value",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder="Value"
+                                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-cat-500 focus:ring-cat-500 sm:text-sm"
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                removeCustomField(index)
+                                            }
+                                            className="text-red-500 hover:text-red-700 px-2"
+                                        >
+                                            &times;
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+
+                            {cfData.custom_fields.length > 0 && (
+                                <div className="flex justify-end pt-2">
+                                    <button
+                                        type="submit"
+                                        disabled={cfProcessing}
+                                        className="inline-flex justify-center rounded-md bg-gray-800 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-700 disabled:opacity-50"
+                                    >
+                                        {cfProcessing
+                                            ? "Saving..."
+                                            : "Save Fields"}
+                                    </button>
+                                </div>
+                            )}
+                        </form>
                     </div>
 
                     <div className="bg-white p-6 shadow-sm sm:rounded-lg">
@@ -123,7 +276,7 @@ export default function Show({ asset, availableChannels }) {
                             published.
                         </p>
 
-                        <form onSubmit={submit}>
+                        <form onSubmit={submitChannels}>
                             <div className="space-y-4 max-h-96 overflow-y-auto border border-gray-200 rounded-md p-4">
                                 {availableChannels.length === 0 ? (
                                     <p className="text-sm text-gray-500 text-center py-4">
@@ -141,7 +294,7 @@ export default function Show({ asset, availableChannels }) {
                                                     id={`channel-${channel.id}`}
                                                     type="checkbox"
                                                     value={channel.id}
-                                                    checked={data.channel_ids.includes(
+                                                    checked={channelData.channel_ids.includes(
                                                         channel.id,
                                                     )}
                                                     onChange={
@@ -166,10 +319,12 @@ export default function Show({ asset, availableChannels }) {
                             <div className="mt-6 flex justify-end">
                                 <button
                                     type="submit"
-                                    disabled={processing}
+                                    disabled={channelProcessing}
                                     className="inline-flex justify-center rounded-md bg-cat-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-cat-600 focus:outline-none focus:ring-2 focus:ring-cat-500 focus:ring-offset-2 disabled:opacity-50"
                                 >
-                                    {processing ? "Saving..." : "Save Channels"}
+                                    {channelProcessing
+                                        ? "Saving..."
+                                        : "Save Channels"}
                                 </button>
                             </div>
                         </form>

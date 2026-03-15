@@ -20,6 +20,8 @@ Route::get('/', function () {
     ]);
 });
 
+use App\Models\ActivityLog;
+
 Route::get('/dashboard', function (Illuminate\Http\Request $request) {
     $workspaceId = $request->user()->workspace_id;
 
@@ -29,8 +31,24 @@ Route::get('/dashboard', function (Illuminate\Http\Request $request) {
         'assets' => Asset::where('workspace_id', $workspaceId)->count(),
     ];
 
+    // ActivityLog
+    $recentActivities = ActivityLog::with('user')
+        ->where('workspace_id', $workspaceId)
+        ->latest()
+        ->take(5)
+        ->get()
+        ->map(function ($log) {
+            return [
+                'id' => $log->id,
+                'user_name' => $log->user->name,
+                'description' => $log->description,
+                'created_at' => $log->created_at->diffForHumans(),
+            ];
+        });
+
     return Inertia::render('Dashboard', [
-        'stats' => $stats
+        'stats' => $stats,
+        'recentActivities' => $recentActivities,
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -55,8 +73,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/assets', [AssetController::class, 'index'])->name('assets.index');
     Route::post('/products/{product}/assets', [AssetController::class, 'store'])->name('assets.store');
     Route::delete('/assets/{asset}', [AssetController::class, 'destroy'])->name('assets.destroy');
-    Route::get('/assets/{asset}', [App\Http\Controllers\AssetController::class, 'show'])->name('assets.show');
+    Route::get('/assets/{asset}', [AssetController::class, 'show'])->name('assets.show');
     Route::post('/assets/{asset}/channels', [AssetController::class, 'syncChannels'])->name('assets.channels.sync');
+    Route::patch('/assets/{asset}/status', [AssetController::class, 'updateStatus'])->name('assets.status.update');
+    Route::patch('/assets/{asset}/custom-fields', [AssetController::class, 'updateCustomFields'])->name('assets.custom_fields.update');
 });
 
 require __DIR__.'/auth.php';

@@ -1,7 +1,7 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link } from "@inertiajs/react";
 
-export default function Dashboard({ stats }) {
+export default function Dashboard({ stats, recentActivities }) {
     return (
         <AuthenticatedLayout
             header={
@@ -102,7 +102,7 @@ export default function Dashboard({ stats }) {
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                     strokeWidth="2"
-                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2v12a2 2 0 002 2z"
                                 />
                             </svg>
                         </div>
@@ -129,13 +129,57 @@ export default function Dashboard({ stats }) {
             </div>
 
             <div className="overflow-hidden rounded-lg bg-white p-6 shadow-sm">
-                <h3 className="text-lg font-medium leading-6 text-gray-900">
+                <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
                     Recent Activity
                 </h3>
-                <div className="mt-4 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 py-12">
-                    <p className="text-sm text-gray-500">
-                        Activity logs will appear here.
-                    </p>
+                <div className="flow-root">
+                    {recentActivities.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 py-12">
+                            <p className="text-sm text-gray-500">
+                                No recent activity found.
+                            </p>
+                        </div>
+                    ) : (
+                        <ul role="list" className="-mb-8">
+                            {recentActivities.map((activity, activityIdx) => (
+                                <li key={activity.id}>
+                                    <div className="relative pb-8">
+                                        {activityIdx !==
+                                        recentActivities.length - 1 ? (
+                                            <span
+                                                className="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200"
+                                                aria-hidden="true"
+                                            />
+                                        ) : null}
+                                        <div className="relative flex space-x-3">
+                                            <div>
+                                                <span className="h-8 w-8 rounded-full bg-cat-100 flex items-center justify-center ring-8 ring-white">
+                                                    <span className="text-xs font-medium leading-none text-cat-700">
+                                                        {activity.user_name
+                                                            .charAt(0)
+                                                            .toUpperCase()}
+                                                    </span>
+                                                </span>
+                                            </div>
+                                            <div className="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                                                <div>
+                                                    <p className="text-sm text-gray-500">
+                                                        <span className="font-medium text-gray-900 mr-1">
+                                                            {activity.user_name}
+                                                        </span>
+                                                        {activity.description}
+                                                    </p>
+                                                </div>
+                                                <div className="whitespace-nowrap text-right text-sm text-gray-500">
+                                                    {activity.created_at}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
             </div>
         </AuthenticatedLayout>
