@@ -12,15 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('channel_assets', function (Blueprint $table) {
+            $table->id();
+            $table->foreignUuid('channel_id')->constrained('channels')->cascadeOnDelete();
             $table->foreignUuid('asset_id')->constrained('assets')->cascadeOnDelete();
-            $table->foreignId('channel_id')->constrained('channels')->cascadeOnDelete();
-            $table->string('status');
-            $table->text('optimized_path')->nullable();
-            $table->timestamp('last_published_at')->nullable();
             $table->timestamps();
-
-            // 복합 키(Composite Key) 설정
-            $table->primary(['asset_id', 'channel_id']);
         });
     }
 

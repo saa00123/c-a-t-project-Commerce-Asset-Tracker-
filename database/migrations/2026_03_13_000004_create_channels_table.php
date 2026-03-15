@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('channels', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->comment('Instagram, Coupang etc.');
-            $table->jsonb('specs')->nullable()->comment('size, ratio specs');
+            $table->uuid('id')->primary();
+            $table->foreignUuid('workspace_id')->constrained('workspaces')->cascadeOnDelete();
+            $table->string('name');
             $table->timestamps();
         });
     }
