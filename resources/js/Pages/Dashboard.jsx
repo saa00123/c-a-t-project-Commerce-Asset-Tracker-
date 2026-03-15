@@ -1,7 +1,47 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link } from "@inertiajs/react";
 
-export default function Dashboard({ stats, recentActivities }) {
+export default function Dashboard({ stats, workflowStats, recentActivities }) {
+    const totalAssets = stats.assets;
+
+    const getPercentage = (count) => {
+        if (totalAssets === 0) return 0;
+        return Math.round((count / totalAssets) * 100);
+    };
+
+    const workflowData = [
+        {
+            key: "DRAFT",
+            label: "Draft",
+            count: workflowStats.DRAFT,
+            color: "bg-gray-400",
+        },
+        {
+            key: "IN_PROGRESS",
+            label: "In Progress",
+            count: workflowStats.IN_PROGRESS,
+            color: "bg-blue-500",
+        },
+        {
+            key: "REVIEW",
+            label: "Review",
+            count: workflowStats.REVIEW,
+            color: "bg-yellow-500",
+        },
+        {
+            key: "APPROVED",
+            label: "Approved",
+            count: workflowStats.APPROVED,
+            color: "bg-green-500",
+        },
+        {
+            key: "DEPLOYED",
+            label: "Deployed",
+            count: workflowStats.DEPLOYED,
+            color: "bg-purple-500",
+        },
+    ];
+
     return (
         <AuthenticatedLayout
             header={
@@ -128,8 +168,59 @@ export default function Dashboard({ stats, recentActivities }) {
                 </div>
             </div>
 
+            <div className="mb-8 overflow-hidden rounded-lg bg-white p-6 shadow-sm">
+                <h3 className="text-lg font-medium leading-6 text-gray-900 mb-6">
+                    Asset Workflow Pipeline
+                </h3>
+
+                {totalAssets === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                        No assets available to display workflow.
+                    </p>
+                ) : (
+                    <div>
+                        <div className="w-full flex h-4 rounded-full overflow-hidden bg-gray-100 mb-6">
+                            {workflowData.map((stage) => {
+                                const percentage = getPercentage(stage.count);
+                                if (percentage === 0) return null;
+                                return (
+                                    <div
+                                        key={stage.key}
+                                        className={`${stage.color} h-full transition-all duration-500 ease-in-out`}
+                                        style={{ width: `${percentage}%` }}
+                                        title={`${stage.label}: ${stage.count}`}
+                                    ></div>
+                                );
+                            })}
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+                            {workflowData.map((stage) => (
+                                <div
+                                    key={stage.key}
+                                    className="flex flex-col items-center p-4 rounded-lg border border-gray-100 bg-gray-50"
+                                >
+                                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                                        {stage.label}
+                                    </span>
+                                    <span className="text-2xl font-bold text-gray-900">
+                                        {stage.count}
+                                    </span>
+                                    <span className="text-xs text-gray-400 mt-1">
+                                        {getPercentage(stage.count)}%
+                                    </span>
+                                    <div
+                                        className={`mt-3 w-3 h-3 rounded-full ${stage.color}`}
+                                    ></div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
             <div className="overflow-hidden rounded-lg bg-white p-6 shadow-sm">
-                <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
+                <h3 className="text-lg font-medium leading-6 text-gray-900 mb-6">
                     Recent Activity
                 </h3>
                 <div className="flow-root">
