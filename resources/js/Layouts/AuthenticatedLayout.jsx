@@ -1,5 +1,5 @@
 import { Link, usePage } from "@inertiajs/react";
-import { useState, useEffect } from "react"; // 👈 추가
+import { useState, useEffect } from "react";
 
 export default function AuthenticatedLayout({ header, children }) {
     const { auth, flash, errors } = usePage().props;
@@ -12,14 +12,18 @@ export default function AuthenticatedLayout({ header, children }) {
             setToast({ type: "success", message: flash.success });
         } else if (flash.error) {
             setToast({ type: "error", message: flash.error });
-        } else if (Object.keys(errors).length > 0) {
+        } else if (errors && Object.keys(errors).length > 0) {
             setToast({
                 type: "error",
-                message: "입력하신 내용을 다시 확인해 주세요.",
+                message: "Please check your input and try again.",
             });
         }
 
-        if (flash.success || flash.error || Object.keys(errors).length > 0) {
+        if (
+            flash.success ||
+            flash.error ||
+            (errors && Object.keys(errors).length > 0)
+        ) {
             const timer = setTimeout(() => setToast(null), 3000);
             return () => clearTimeout(timer);
         }
@@ -27,7 +31,6 @@ export default function AuthenticatedLayout({ header, children }) {
 
     return (
         <div className="flex h-screen bg-gray-100 relative">
-            {/* 👇 화면 우측 하단에 고정되는 알림창 (Toast) UI 추가 */}
             {toast && (
                 <div
                     className={`fixed bottom-6 right-6 z-50 transform transition-all duration-300 rounded-md px-4 py-3 shadow-lg text-white font-medium ${

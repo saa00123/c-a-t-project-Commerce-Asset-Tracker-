@@ -2,9 +2,10 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link, useForm } from "@inertiajs/react";
 
 export default function Show({ product }) {
-    const { data, setData, post, processing, reset, errors } = useForm({
+    const { data, setData, post, processing, errors, reset } = useForm({
         title: "",
         type: "IMAGE",
+        product_id: product.id,
     });
 
     const { delete: destroy } = useForm();

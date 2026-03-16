@@ -19,6 +19,8 @@ class Asset extends Model
         'status',
         'tags',
         'custom_fields',
+        'file_path',
+        'file_url',
     ];
 
     protected $casts = [

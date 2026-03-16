@@ -73,11 +73,14 @@ Route::middleware('auth')->group(function () {
     Route::delete('/products/{product}', [App\Http\Controllers\ProductController::class, 'destroy'])->name('products.destroy');
 
     Route::get('/assets', [App\Http\Controllers\AssetController::class, 'index'])->name('assets.index');
+    Route::post('/assets', [App\Http\Controllers\AssetController::class, 'store'])->name('assets.store');
+    Route::post('/assets/{asset}/upload', [App\Http\Controllers\AssetController::class, 'uploadFile'])->name('assets.upload');
     Route::get('/assets/{asset}', [App\Http\Controllers\AssetController::class, 'show'])->name('assets.show');
     Route::post('/assets/{asset}/channels', [App\Http\Controllers\AssetController::class, 'syncChannels'])->name('assets.channels.sync');
     Route::patch('/assets/{asset}/status', [App\Http\Controllers\AssetController::class, 'updateStatus'])->name('assets.status.update');
     Route::patch('/assets/{asset}/custom-fields', [App\Http\Controllers\AssetController::class, 'updateCustomFields'])->name('assets.custom_fields.update');
     Route::delete('/assets/{asset}', [App\Http\Controllers\AssetController::class, 'destroy'])->name('assets.destroy');
+    Route::delete('/assets/{asset}/file', [App\Http\Controllers\AssetController::class, 'removeFile'])->name('assets.remove_file');
 
     Route::get('/channels', [App\Http\Controllers\ChannelController::class, 'index'])->name('channels.index');
     Route::post('/channels', [App\Http\Controllers\ChannelController::class, 'store'])->name('channels.store');

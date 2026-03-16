@@ -6,6 +6,7 @@ use App\Models\Asset;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
 
 class AssetController extends Controller
 {
@@ -38,23 +39,6 @@ class AssetController extends Controller
             'assets' => $assets,
             'filters' => $request->only(['search', 'type', 'status'])
         ]);
-    }
-
-    public function store(Request $request, Product $product)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'type' => 'required|in:IMAGE,VIDEO',
-        ]);
-
-        $product->assets()->create([
-            'workspace_id' => $request->user()->workspace_id,
-            'title' => $validated['title'],
-            'type' => $validated['type'],
-            'status' => 'DRAFT',
-        ]);
-
-        return back()->with('success', 'Asset created successfully.');
     }
 
     public function show(Request $request, Asset $asset)
@@ -124,5 +108,68 @@ class AssetController extends Controller
         ]);
 
         return back()->with('success', 'Custom fields updated successfully.');
+    }
+
+    public function uploadFile(Request $request, Asset $asset)
+    {
+        $request->validate([
+            'file' => 'required|file|max:51200',
+        ]);
+
+        $file = $request->file('file');
+        $originalName = $file->getClientOriginalName();
+        $mimeType = $file->getMimeType();
+        $type = str_starts_with($mimeType, 'video/') ? 'VIDEO' : 'IMAGE';
+
+        $path = $file->storeAs(
+            "workspaces/{$asset->workspace_id}/products/{$asset->product_id}",
+            time() . '_' . $originalName,
+            's3'
+        );
+
+        $bucket = config('filesystems.disks.s3.bucket');
+        $region = config('filesystems.disks.s3.region');
+        $fileUrl = "https://{$bucket}.s3.{$region}.amazonaws.com/{$path}";
+
+        $asset->update([
+            'type' => $type,
+            'file_path' => $path,
+            'file_url' => $fileUrl,
+        ]);
+
+        return back()->with('success', 'File uploaded and attached successfully!');
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'title' => 'required|string|max:255',
+            'type' => 'required|in:IMAGE,VIDEO',
+        ]);
+
+        $asset = Asset::create([
+            'workspace_id' => $request->user()->workspace_id,
+            'product_id' => $request->product_id,
+            'title' => $request->title,
+            'type' => $request->type,
+            'status' => 'DRAFT',
+        ]);
+
+        return redirect()->route('assets.show', $asset->id)->with('success', 'Asset created. Please upload the file.');
+    }
+
+    public function removeFile(Asset $asset)
+    {
+        if ($asset->file_path) {
+            Storage::disk('s3')->delete($asset->file_path);
+        }
+
+        $asset->update([
+            'file_path' => null,
+            'file_url' => null,
+        ]);
+
+        return back()->with('success', 'File removed successfully from S3.');
     }
 }
