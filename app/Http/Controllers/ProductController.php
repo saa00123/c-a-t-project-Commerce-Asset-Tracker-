@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -48,18 +49,39 @@ class ProductController extends Controller
             'sku.regex' => 'The SKU must match the format: UPPERCASE-NUMBERS (e.g., TSHIRT-001). Minimum 3 digits required.',
         ]);
 
-        Product::create([
+        $product = Product::create([
             'workspace_id' => $request->user()->workspace_id,
             'sku' => $validated['sku'],
             'name' => $validated['name'],
         ]);
 
+        ActivityLog::create([
+            'workspace_id' => $request->user()->workspace_id,
+            'user_id' => $request->user()->id,
+            'action' => 'CREATED',
+            'subject_type' => Product::class,
+            'subject_id' => $product->id,
+            'description' => "Created new product: {$product->name} ({$product->sku})",
+        ]);
+
         return redirect()->route('products.index');
     }
 
-    public function destroy(Product $product)
+    public function destroy(Request $request, Product $product)
     {
+        $productName = $product->name;
+        $productSku = $product->sku;
+
         $product->delete();
+
+        ActivityLog::create([
+            'workspace_id' => $request->user()->workspace_id,
+            'user_id' => $request->user()->id,
+            'action' => 'DELETED',
+            'subject_type' => Product::class,
+            'subject_id' => $product->id,
+            'description' => "Deleted product: {$productName} ({$productSku})",
+        ]);
 
         return redirect()->route('products.index');
     }

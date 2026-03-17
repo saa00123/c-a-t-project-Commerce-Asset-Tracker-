@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\Product;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
@@ -62,6 +63,15 @@ class AssetController extends Controller
 
         $asset->channels()->sync($validated['channel_ids'] ?? []);
 
+        ActivityLog::create([
+            'workspace_id' => $request->user()->workspace_id,
+            'user_id' => $request->user()->id,
+            'action' => 'CHANNELS_SYNCED',
+            'subject_type' => Asset::class,
+            'subject_id' => $asset->id,
+            'description' => "Updated target channels for asset: {$asset->title}",
+        ]);
+
         return back()->with('success', 'Channels synced successfully.');
     }
 
@@ -71,16 +81,42 @@ class AssetController extends Controller
             'status' => 'required|in:DRAFT,IN_PROGRESS,REVIEW,APPROVED,DEPLOYED'
         ]);
 
+        $oldStatus = $asset->status;
+
         $asset->update([
             'status' => $validated['status']
+        ]);
+
+        ActivityLog::create([
+            'workspace_id' => $request->user()->workspace_id,
+            'user_id' => $request->user()->id,
+            'action' => 'STATUS_UPDATED',
+            'subject_type' => Asset::class,
+            'subject_id' => $asset->id,
+            'description' => "Changed asset status from {$oldStatus} to {$asset->status} for '{$asset->title}'",
         ]);
 
         return back()->with('success', 'Asset status updated successfully.');
     }
 
-    public function destroy(Asset $asset)
+    public function destroy(Request $request, Asset $asset)
     {
+        $assetTitle = $asset->title;
+
+        if ($asset->file_path) {
+            Storage::disk('s3')->delete($asset->file_path);
+        }
+
         $asset->delete();
+
+        ActivityLog::create([
+            'workspace_id' => $request->user()->workspace_id,
+            'user_id' => $request->user()->id,
+            'action' => 'DELETED',
+            'subject_type' => Asset::class,
+            'subject_id' => $asset->id,
+            'description' => "Deleted asset: {$assetTitle}",
+        ]);
 
         return back()->with('success', 'Asset deleted successfully.');
     }
@@ -105,6 +141,15 @@ class AssetController extends Controller
 
         $asset->update([
             'custom_fields' => $formattedFields
+        ]);
+
+        ActivityLog::create([
+            'workspace_id' => $request->user()->workspace_id,
+            'user_id' => $request->user()->id,
+            'action' => 'CUSTOM_FIELDS_UPDATED',
+            'subject_type' => Asset::class,
+            'subject_id' => $asset->id,
+            'description' => "Updated custom fields for asset: {$asset->title}",
         ]);
 
         return back()->with('success', 'Custom fields updated successfully.');
@@ -137,6 +182,15 @@ class AssetController extends Controller
             'file_url' => $fileUrl,
         ]);
 
+        ActivityLog::create([
+            'workspace_id' => $request->user()->workspace_id,
+            'user_id' => $request->user()->id,
+            'action' => 'FILE_UPLOADED',
+            'subject_type' => Asset::class,
+            'subject_id' => $asset->id,
+            'description' => "Uploaded file for asset: {$asset->title}",
+        ]);
+
         return back()->with('success', 'File uploaded and attached successfully!');
     }
 
@@ -156,10 +210,19 @@ class AssetController extends Controller
             'status' => 'DRAFT',
         ]);
 
+        ActivityLog::create([
+            'workspace_id' => $request->user()->workspace_id,
+            'user_id' => $request->user()->id,
+            'action' => 'CREATED',
+            'subject_type' => Asset::class,
+            'subject_id' => $asset->id,
+            'description' => "Created new asset: {$asset->title}",
+        ]);
+
         return redirect()->route('assets.show', $asset->id)->with('success', 'Asset created. Please upload the file.');
     }
 
-    public function removeFile(Asset $asset)
+    public function removeFile(Request $request, Asset $asset)
     {
         if ($asset->file_path) {
             Storage::disk('s3')->delete($asset->file_path);
@@ -168,6 +231,15 @@ class AssetController extends Controller
         $asset->update([
             'file_path' => null,
             'file_url' => null,
+        ]);
+
+        ActivityLog::create([
+            'workspace_id' => $request->user()->workspace_id,
+            'user_id' => $request->user()->id,
+            'action' => 'FILE_REMOVED',
+            'subject_type' => Asset::class,
+            'subject_id' => $asset->id,
+            'description' => "Removed S3 file from asset: {$asset->title}",
         ]);
 
         return back()->with('success', 'File removed successfully from S3.');
