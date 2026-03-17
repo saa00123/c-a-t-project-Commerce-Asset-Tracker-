@@ -11,6 +11,7 @@ class ChannelController extends Controller
     public function index(Request $request)
     {
         $channels = Channel::where('workspace_id', $request->user()->workspace_id)
+            ->withCount('assets')
             ->latest()
             ->get();
 
@@ -21,22 +22,36 @@ class ChannelController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'name' => 'required|string|max:255',
         ]);
 
         Channel::create([
             'workspace_id' => $request->user()->workspace_id,
-            'name' => $validated['name'],
+            'name' => $request->name,
         ]);
 
-        return redirect()->route('channels.index');
+        return back()->with('success', 'Channel created successfully.');
+    }
+
+    public function update(Request $request, Channel $channel)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $channel->update([
+            'name' => $request->name,
+        ]);
+
+        return back()->with('success', 'Channel updated successfully.');
     }
 
     public function destroy(Channel $channel)
     {
+        $channel->assets()->detach();
         $channel->delete();
 
-        return redirect()->route('channels.index');
+        return back()->with('success', 'Channel deleted successfully.');
     }
 }

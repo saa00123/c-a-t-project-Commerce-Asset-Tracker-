@@ -1,164 +1,247 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import ConfirmModal from "@/Components/ConfirmModal";
-import { Head, useForm } from "@inertiajs/react";
+import { Head, useForm, router } from "@inertiajs/react";
 import { useState } from "react";
 
 export default function Index({ channels }) {
-    const {
-        data,
-        setData,
-        post,
-        processing: isSaving,
-        errors,
-        reset,
-    } = useForm({
+    const { data, setData, post, processing, reset, errors } = useForm({
         name: "",
     });
 
-    const { delete: destroy, processing: isDeleting } = useForm();
-    const [confirmingDeletion, setConfirmingDeletion] = useState(false);
-    const [targetId, setTargetId] = useState(null);
+    const [editingId, setEditingId] = useState(null);
+    const [editName, setEditName] = useState("");
+    const [deleteModalId, setDeleteModalId] = useState(null);
 
-    const submit = (e) => {
+    const submitAdd = (e) => {
         e.preventDefault();
         post(route("channels.store"), {
+            preserveScroll: true,
             onSuccess: () => reset("name"),
         });
     };
 
-    const confirmDelete = (id) => {
-        setTargetId(id);
-        setConfirmingDeletion(true);
+    const startEdit = (channel) => {
+        setEditingId(channel.id);
+        setEditName(channel.name);
     };
 
-    const closeModal = () => {
-        setConfirmingDeletion(false);
-        setTargetId(null);
+    const cancelEdit = () => {
+        setEditingId(null);
+        setEditName("");
     };
 
-    const handleDelete = () => {
-        destroy(route("channels.destroy", targetId), {
-            preserveScroll: true,
-            onSuccess: () => closeModal(),
-            onFinish: () => closeModal(),
-        });
+    const submitEdit = (id) => {
+        router.patch(
+            route("channels.update", id),
+            { name: editName },
+            {
+                preserveScroll: true,
+                onSuccess: () => cancelEdit(),
+            },
+        );
+    };
+
+    const confirmDelete = () => {
+        if (deleteModalId) {
+            router.delete(route("channels.destroy", deleteModalId), {
+                preserveScroll: true,
+                onSuccess: () => setDeleteModalId(null),
+            });
+        }
     };
 
     return (
         <AuthenticatedLayout
             header={
                 <h2 className="text-xl font-semibold leading-tight text-gray-800">
-                    Channels
+                    Channel Management
                 </h2>
             }
         >
             <Head title="Channels" />
 
-            <div className="flex flex-col gap-6 md:flex-row">
-                <div className="w-full md:w-1/3">
-                    <div className="bg-white p-6 shadow-sm sm:rounded-lg">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">
-                            Add New Channel
+            {deleteModalId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4 transition-opacity">
+                    <div className="w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all">
+                        <h3 className="text-lg font-medium leading-6 text-gray-900">
+                            Delete Channel
                         </h3>
-                        <form onSubmit={submit} className="space-y-4">
-                            <div>
-                                <input
-                                    type="text"
-                                    value={data.name}
-                                    onChange={(e) =>
-                                        setData("name", e.target.value)
-                                    }
-                                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-cat-500 focus:ring-cat-500 sm:text-sm"
-                                    placeholder="e.g. Naver Smart Store"
-                                />
-                                {errors.name && (
-                                    <div className="mt-1 text-sm text-red-600">
-                                        {errors.name}
-                                    </div>
-                                )}
-                            </div>
+                        <div className="mt-2">
+                            <p className="text-sm text-gray-500">
+                                Are you sure you want to delete this channel?
+                                This action cannot be undone and it will be
+                                removed from all associated assets.
+                            </p>
+                        </div>
+                        <div className="mt-6 flex justify-end gap-3">
                             <button
-                                type="submit"
-                                disabled={isSaving || !data.name}
-                                className="w-full justify-center rounded-md bg-cat-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-cat-600 focus:outline-none focus:ring-2 focus:ring-cat-500 focus:ring-offset-2 disabled:opacity-50"
+                                type="button"
+                                onClick={() => setDeleteModalId(null)}
+                                className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-cat-500 focus:ring-offset-2"
                             >
-                                {isSaving ? "Adding..." : "Add Channel"}
+                                Cancel
                             </button>
-                        </form>
-                    </div>
-                </div>
-
-                <div className="w-full md:w-2/3">
-                    <div className="bg-white p-6 shadow-sm sm:rounded-lg">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left text-sm text-gray-500">
-                                <thead className="bg-gray-50 text-xs uppercase text-gray-700">
-                                    <tr>
-                                        <th className="px-6 py-3">
-                                            Channel Name
-                                        </th>
-                                        <th className="px-6 py-3">
-                                            Created At
-                                        </th>
-                                        <th className="px-6 py-3 text-right">
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {channels.length === 0 ? (
-                                        <tr>
-                                            <td
-                                                colSpan="3"
-                                                className="px-6 py-8 text-center text-gray-500"
-                                            >
-                                                No channels added yet.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        channels.map((channel) => (
-                                            <tr
-                                                key={channel.id}
-                                                className="border-b bg-white"
-                                            >
-                                                <td className="px-6 py-4 font-medium text-gray-900">
-                                                    {channel.name}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    {new Date(
-                                                        channel.created_at,
-                                                    ).toLocaleDateString()}
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <button
-                                                        onClick={() =>
-                                                            confirmDelete(
-                                                                channel.id,
-                                                            )
-                                                        }
-                                                        className="font-medium text-red-600 hover:underline"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
+                            <button
+                                type="button"
+                                onClick={confirmDelete}
+                                className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                            >
+                                Delete
+                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
 
-            <ConfirmModal
-                show={confirmingDeletion}
-                onClose={closeModal}
-                onConfirm={handleDelete}
-                processing={isDeleting}
-                title="Delete Channel"
-                message="Are you sure you want to delete this channel? It will be removed from all associated assets."
-            />
+            <div className="mx-auto max-w-4xl space-y-6">
+                <div className="bg-white p-6 shadow-sm sm:rounded-lg">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                        Add New Channel
+                    </h3>
+                    <form
+                        onSubmit={submitAdd}
+                        className="flex gap-4 items-start"
+                    >
+                        <div className="flex-1">
+                            <input
+                                type="text"
+                                value={data.name}
+                                onChange={(e) =>
+                                    setData("name", e.target.value)
+                                }
+                                placeholder="Enter channel name (e.g., YouTube, Instagram, Official Website)"
+                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-cat-500 focus:ring-cat-500"
+                            />
+                            {errors.name && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {errors.name}
+                                </p>
+                            )}
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className="inline-flex justify-center rounded-md bg-cat-500 px-6 py-2 text-sm font-medium text-white shadow-sm hover:bg-cat-600 disabled:opacity-50"
+                        >
+                            {processing ? "Adding..." : "Add Channel"}
+                        </button>
+                    </form>
+                </div>
+
+                <div className="bg-white shadow-sm sm:rounded-lg overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th
+                                    scope="col"
+                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                    Channel Name
+                                </th>
+                                <th
+                                    scope="col"
+                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                    Linked Assets
+                                </th>
+                                <th
+                                    scope="col"
+                                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {channels.length === 0 ? (
+                                <tr>
+                                    <td
+                                        colSpan="3"
+                                        className="px-6 py-8 text-center text-sm text-gray-500"
+                                    >
+                                        No channels created yet. Add your first
+                                        channel above!
+                                    </td>
+                                </tr>
+                            ) : (
+                                channels.map((channel) => (
+                                    <tr
+                                        key={channel.id}
+                                        className="hover:bg-gray-50"
+                                    >
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {editingId === channel.id ? (
+                                                <input
+                                                    type="text"
+                                                    value={editName}
+                                                    onChange={(e) =>
+                                                        setEditName(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-cat-500 focus:ring-cat-500 text-sm py-1"
+                                                    autoFocus
+                                                />
+                                            ) : (
+                                                <div className="text-sm font-medium text-gray-900">
+                                                    {channel.name}
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                                                {channel.assets_count} assets
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            {editingId === channel.id ? (
+                                                <div className="flex justify-end gap-3">
+                                                    <button
+                                                        onClick={() =>
+                                                            submitEdit(
+                                                                channel.id,
+                                                            )
+                                                        }
+                                                        className="text-cat-600 hover:text-cat-900"
+                                                    >
+                                                        Save
+                                                    </button>
+                                                    <button
+                                                        onClick={cancelEdit}
+                                                        className="text-gray-500 hover:text-gray-700"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex justify-end gap-3">
+                                                    <button
+                                                        onClick={() =>
+                                                            startEdit(channel)
+                                                        }
+                                                        className="text-cat-600 hover:text-cat-900"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            setDeleteModalId(
+                                                                channel.id,
+                                                            )
+                                                        }
+                                                        className="text-red-600 hover:text-red-900"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </AuthenticatedLayout>
     );
 }

@@ -85,6 +85,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/channels', [App\Http\Controllers\ChannelController::class, 'index'])->name('channels.index');
     Route::post('/channels', [App\Http\Controllers\ChannelController::class, 'store'])->name('channels.store');
     Route::delete('/channels/{channel}', [App\Http\Controllers\ChannelController::class, 'destroy'])->name('channels.destroy');
+    Route::resource('channels', App\Http\Controllers\ChannelController::class)->except(['create', 'show', 'edit']);
 });
 
 require __DIR__.'/auth.php';
