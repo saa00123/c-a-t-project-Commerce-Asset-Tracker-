@@ -76,6 +76,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/assets', [App\Http\Controllers\AssetController::class, 'store'])->name('assets.store');
     Route::post('/assets/{asset}/upload', [App\Http\Controllers\AssetController::class, 'uploadFile'])->name('assets.upload');
     Route::get('/assets/{asset}', [App\Http\Controllers\AssetController::class, 'show'])->name('assets.show');
+    Route::get('/assets/{asset}/download', [App\Http\Controllers\AssetController::class, 'download'])->name('assets.download');
     Route::post('/assets/{asset}/channels', [App\Http\Controllers\AssetController::class, 'syncChannels'])->name('assets.channels.sync');
     Route::patch('/assets/{asset}/status', [App\Http\Controllers\AssetController::class, 'updateStatus'])->name('assets.status.update');
     Route::patch('/assets/{asset}/custom-fields', [App\Http\Controllers\AssetController::class, 'updateCustomFields'])->name('assets.custom_fields.update');

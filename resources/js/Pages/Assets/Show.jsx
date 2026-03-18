@@ -168,6 +168,7 @@ export default function Show({ asset, availableChannels }) {
         >
             <Head title={asset.title} />
 
+            {/* S3 파일 삭제 확인 모달 - 원래 위치 복구 */}
             {showDeleteModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4 transition-opacity">
                     <div className="w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all">
@@ -191,7 +192,7 @@ export default function Show({ asset, availableChannels }) {
                             <button
                                 type="button"
                                 onClick={confirmRemoveFile}
-                                className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                                className="inline-flex justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                             >
                                 Remove File
                             </button>
@@ -201,7 +202,9 @@ export default function Show({ asset, availableChannels }) {
             )}
 
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+                {/* 좌측 패널 (정보, 채널, 커스텀 필드) */}
                 <div className="w-full lg:w-1/2 flex flex-col gap-6">
+                    {/* ... Asset Information 패널 ... */}
                     <div className="bg-white p-6 shadow-sm sm:rounded-lg">
                         <div className="flex items-center justify-between border-b pb-4 mb-4">
                             <h3 className="text-lg font-medium text-gray-900">
@@ -262,6 +265,7 @@ export default function Show({ asset, availableChannels }) {
                         </div>
                     </div>
 
+                    {/* Target Channels 패널 */}
                     <div className="bg-white p-6 shadow-sm sm:rounded-lg">
                         <div className="flex items-center justify-between border-b pb-4 mb-4">
                             <h3 className="text-lg font-medium text-gray-900">
@@ -325,6 +329,7 @@ export default function Show({ asset, availableChannels }) {
                         </form>
                     </div>
 
+                    {/* Custom Fields 패널 */}
                     <div className="bg-white p-6 shadow-sm sm:rounded-lg">
                         <div className="flex items-center justify-between border-b pb-4 mb-4">
                             <h3 className="text-lg font-medium text-gray-900">
@@ -409,6 +414,7 @@ export default function Show({ asset, availableChannels }) {
                     </div>
                 </div>
 
+                {/* 우측 패널 (파일 미리보기 및 업로드/다운로드) */}
                 <div className="w-full lg:w-1/2">
                     <div className="bg-white p-6 shadow-sm sm:rounded-lg sticky top-6">
                         <div className="flex items-center justify-between border-b pb-4 mb-4">
@@ -438,11 +444,36 @@ export default function Show({ asset, availableChannels }) {
                                 <p className="mt-4 text-xs text-gray-500 break-all bg-gray-100 p-2 rounded w-full text-center">
                                     {asset.file_url}
                                 </p>
-                                <div className="mt-6">
+
+                                {/* 올바르게 배치된 다운로드 및 삭제 버튼 */}
+                                <div className="mt-6 flex justify-center gap-4 w-full">
+                                    <a
+                                        href={route(
+                                            "assets.download",
+                                            asset.id,
+                                        )}
+                                        className="inline-flex flex-1 justify-center items-center rounded-md bg-gray-800 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-700 transition-colors"
+                                    >
+                                        <svg
+                                            className="w-4 h-4 mr-2"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                            />
+                                        </svg>
+                                        Download File
+                                    </a>
                                     <button
                                         type="button"
                                         onClick={() => setShowDeleteModal(true)}
-                                        className="inline-flex justify-center rounded-md bg-red-50 px-4 py-2 text-sm font-medium text-red-700 shadow-sm ring-1 ring-inset ring-red-600/20 hover:bg-red-100"
+                                        className="inline-flex flex-1 justify-center items-center rounded-md bg-white px-4 py-2 text-sm font-medium text-red-600 shadow-sm ring-1 ring-inset ring-red-600/20 hover:bg-red-50 transition-colors"
                                     >
                                         Remove File
                                     </button>
@@ -467,21 +498,21 @@ export default function Show({ asset, availableChannels }) {
                                         className="w-full max-h-[600px] rounded-md object-contain bg-gray-50 border border-gray-200"
                                     />
                                 )}
-                                <div className="mt-4 flex gap-4">
+                                <div className="mt-4 flex gap-4 w-full">
                                     <button
                                         type="button"
                                         onClick={resetFile}
-                                        className="inline-flex justify-center rounded-md bg-white px-6 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                                        className="inline-flex flex-1 justify-center rounded-md bg-white px-6 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={fileProcessing}
-                                        className="inline-flex justify-center rounded-md bg-cat-500 px-6 py-2 text-sm font-medium text-white shadow-sm hover:bg-cat-600 disabled:opacity-50"
+                                        className="inline-flex flex-1 justify-center rounded-md bg-cat-500 px-6 py-2 text-sm font-medium text-white shadow-sm hover:bg-cat-600 disabled:opacity-50"
                                     >
                                         {fileProcessing
-                                            ? "Uploading to S3..."
+                                            ? "Uploading..."
                                             : "Upload File"}
                                     </button>
                                 </div>

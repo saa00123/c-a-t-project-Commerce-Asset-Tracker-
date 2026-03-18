@@ -172,6 +172,10 @@ class AssetController extends Controller
             's3'
         );
 
+        if (!$path) {
+            return back()->withErrors(['file' => 'Failed to upload file to S3.']);
+        }
+
         $bucket = config('filesystems.disks.s3.bucket');
         $region = config('filesystems.disks.s3.region');
         $fileUrl = "https://{$bucket}.s3.{$region}.amazonaws.com/{$path}";
@@ -243,5 +247,38 @@ class AssetController extends Controller
         ]);
 
         return back()->with('success', 'File removed successfully from S3.');
+    }
+
+    public function download(Request $request, Asset $asset)
+    {
+        if (!$asset->file_path) {
+            return back()->with('error', 'File not found.');
+        }
+
+        ActivityLog::create([
+            'workspace_id' => $request->user()->workspace_id,
+            'user_id' => $request->user()->id,
+            'action' => 'FILE_DOWNLOADED',
+            'subject_type' => Asset::class,
+            'subject_id' => $asset->id,
+            'description' => "Downloaded file from asset: {$asset->title}",
+        ]);
+
+        $fileName = basename($asset->file_path);
+        $disk = Storage::disk('s3');
+
+        if ($disk instanceof \Illuminate\Filesystem\FilesystemAdapter) {
+            $temporaryUrl = $disk->temporaryUrl(
+                $asset->file_path,
+                now()->addMinutes(5),
+                [
+                    'ResponseContentDisposition' => 'attachment; filename="' . $fileName . '"'
+                ]
+            );
+
+            return redirect()->away($temporaryUrl);
+        }
+
+        return back()->with('error', 'Download not supported by current storage driver.');
     }
 }
