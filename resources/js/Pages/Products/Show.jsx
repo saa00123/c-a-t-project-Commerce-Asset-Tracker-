@@ -1,14 +1,19 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link, useForm } from "@inertiajs/react";
+import { useState } from "react";
+import Spinner from "@/Components/Spinner";
 
 export default function Show({ product }) {
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [assetToDelete, setAssetToDelete] = useState(null);
+
     const { data, setData, post, processing, errors, reset } = useForm({
         title: "",
         type: "IMAGE",
         product_id: product.id,
     });
 
-    const { delete: destroy } = useForm();
+    const { delete: destroy, processing: deleteProcessing } = useForm();
 
     const submit = (e) => {
         e.preventDefault();
@@ -17,10 +22,21 @@ export default function Show({ product }) {
         });
     };
 
-    const handleDeleteAsset = (assetId) => {
-        if (confirm("Are you sure you want to delete this asset info?")) {
-            destroy(route("assets.destroy", assetId), {
+    const openDeleteModal = (assetId) => {
+        setAssetToDelete(assetId);
+        setShowDeleteModal(true);
+    };
+
+    const closeDeleteModal = () => {
+        setShowDeleteModal(false);
+        setAssetToDelete(null);
+    };
+
+    const confirmDelete = () => {
+        if (assetToDelete) {
+            destroy(route("assets.destroy", assetToDelete), {
                 preserveScroll: true,
+                onSuccess: () => closeDeleteModal(),
             });
         }
     };
@@ -42,6 +58,43 @@ export default function Show({ product }) {
             }
         >
             <Head title={product.name} />
+
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4 transition-opacity">
+                    <div className="w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all">
+                        <h3 className="text-lg font-medium leading-6 text-gray-900">
+                            Delete Asset
+                        </h3>
+                        <div className="mt-2">
+                            <p className="text-sm text-gray-500">
+                                Are you sure you want to delete this asset info?
+                                This action cannot be undone.
+                            </p>
+                        </div>
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={closeDeleteModal}
+                                disabled={deleteProcessing}
+                                className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-cat-500 focus:ring-offset-2 disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={confirmDelete}
+                                disabled={deleteProcessing}
+                                className="inline-flex items-center justify-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
+                            >
+                                {deleteProcessing && (
+                                    <Spinner className="h-4 w-4" />
+                                )}
+                                {deleteProcessing ? "Deleting..." : "Delete"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="flex flex-col gap-6 md:flex-row">
                 <div className="w-full md:w-1/3 space-y-6">
@@ -111,8 +164,9 @@ export default function Show({ product }) {
                             <button
                                 type="submit"
                                 disabled={processing || !data.title}
-                                className="w-full justify-center rounded-md bg-cat-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-cat-600 disabled:opacity-50"
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-cat-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-cat-600 disabled:opacity-50"
                             >
+                                {processing && <Spinner className="h-4 w-4" />}
                                 {processing ? "Adding..." : "Add Asset Info"}
                             </button>
                         </form>
@@ -149,9 +203,9 @@ export default function Show({ product }) {
                                             </div>
                                             <button
                                                 onClick={() =>
-                                                    handleDeleteAsset(asset.id)
+                                                    openDeleteModal(asset.id)
                                                 }
-                                                className="text-gray-400 hover:text-red-600"
+                                                className="text-gray-400 hover:text-red-600 focus:outline-none"
                                             >
                                                 <svg
                                                     className="h-5 w-5"
@@ -167,7 +221,15 @@ export default function Show({ product }) {
                                             </button>
                                         </div>
                                         <h4 className="mt-3 font-medium text-gray-900 truncate">
-                                            {asset.title}
+                                            <Link
+                                                href={route(
+                                                    "assets.show",
+                                                    asset.id,
+                                                )}
+                                                className="hover:text-cat-600 hover:underline"
+                                            >
+                                                {asset.title}
+                                            </Link>
                                         </h4>
                                         <p className="mt-1 text-xs text-gray-500">
                                             {new Date(

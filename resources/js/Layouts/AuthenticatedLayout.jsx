@@ -1,16 +1,17 @@
 import { Link, usePage } from "@inertiajs/react";
 import { useState, useEffect } from "react";
+import Toast from "@/Components/Toast";
 
 export default function AuthenticatedLayout({ header, children }) {
     const { auth, flash, errors } = usePage().props;
-    const user = auth.user;
+    const user = auth?.user;
 
     const [toast, setToast] = useState(null);
 
     useEffect(() => {
-        if (flash.success) {
+        if (flash?.success) {
             setToast({ type: "success", message: flash.success });
-        } else if (flash.error) {
+        } else if (flash?.error) {
             setToast({ type: "error", message: flash.error });
         } else if (errors && Object.keys(errors).length > 0) {
             setToast({
@@ -20,8 +21,8 @@ export default function AuthenticatedLayout({ header, children }) {
         }
 
         if (
-            flash.success ||
-            flash.error ||
+            flash?.success ||
+            flash?.error ||
             (errors && Object.keys(errors).length > 0)
         ) {
             const timer = setTimeout(() => setToast(null), 3000);
@@ -31,47 +32,6 @@ export default function AuthenticatedLayout({ header, children }) {
 
     return (
         <div className="flex h-screen bg-gray-100 relative">
-            {toast && (
-                <div
-                    className={`fixed bottom-6 right-6 z-50 transform transition-all duration-300 rounded-md px-4 py-3 shadow-lg text-white font-medium ${
-                        toast.type === "success" ? "bg-cat-500" : "bg-red-500"
-                    }`}
-                >
-                    <div className="flex items-center space-x-2">
-                        {toast.type === "success" ? (
-                            <svg
-                                className="w-5 h-5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M5 13l4 4L19 7"
-                                ></path>
-                            </svg>
-                        ) : (
-                            <svg
-                                className="w-5 h-5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                ></path>
-                            </svg>
-                        )}
-                        <span>{toast.message}</span>
-                    </div>
-                </div>
-            )}
-
             <aside className="flex w-64 flex-col bg-cat-500">
                 <div className="flex h-16 items-center justify-center border-b border-cat-600">
                     <Link href="/">
@@ -130,9 +90,11 @@ export default function AuthenticatedLayout({ header, children }) {
                         className="block hover:opacity-80"
                     >
                         <div className="text-sm font-medium text-white">
-                            {user.name}
+                            {user?.name}
                         </div>
-                        <div className="text-xs text-cat-200">{user.email}</div>
+                        <div className="text-xs text-cat-200">
+                            {user?.email}
+                        </div>
                     </Link>
                     <Link
                         href={route("logout")}
@@ -157,6 +119,12 @@ export default function AuthenticatedLayout({ header, children }) {
                 <main className="flex-1 overflow-y-auto bg-gray-100 p-6">
                     {children}
                 </main>
+
+                <Toast
+                    message={toast?.message}
+                    type={toast?.type}
+                    onClose={() => setToast(null)}
+                />
             </div>
         </div>
     );

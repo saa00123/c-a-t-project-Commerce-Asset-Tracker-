@@ -1,6 +1,7 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link, useForm, router } from "@inertiajs/react";
 import { useState, useEffect } from "react";
+import Spinner from "@/Components/Spinner";
 
 export default function Show({ asset, availableChannels }) {
     const [previewUrl, setPreviewUrl] = useState(null);
@@ -168,7 +169,6 @@ export default function Show({ asset, availableChannels }) {
         >
             <Head title={asset.title} />
 
-            {/* S3 파일 삭제 확인 모달 - 원래 위치 복구 */}
             {showDeleteModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4 transition-opacity">
                     <div className="w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all">
@@ -202,9 +202,7 @@ export default function Show({ asset, availableChannels }) {
             )}
 
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-                {/* 좌측 패널 (정보, 채널, 커스텀 필드) */}
                 <div className="w-full lg:w-1/2 flex flex-col gap-6">
-                    {/* ... Asset Information 패널 ... */}
                     <div className="bg-white p-6 shadow-sm sm:rounded-lg">
                         <div className="flex items-center justify-between border-b pb-4 mb-4">
                             <h3 className="text-lg font-medium text-gray-900">
@@ -265,7 +263,6 @@ export default function Show({ asset, availableChannels }) {
                         </div>
                     </div>
 
-                    {/* Target Channels 패널 */}
                     <div className="bg-white p-6 shadow-sm sm:rounded-lg">
                         <div className="flex items-center justify-between border-b pb-4 mb-4">
                             <h3 className="text-lg font-medium text-gray-900">
@@ -319,8 +316,11 @@ export default function Show({ asset, availableChannels }) {
                                 <button
                                     type="submit"
                                     disabled={channelProcessing}
-                                    className="inline-flex justify-center rounded-md bg-cat-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-cat-600 focus:outline-none focus:ring-2 focus:ring-cat-500 focus:ring-offset-2 disabled:opacity-50"
+                                    className="inline-flex items-center justify-center gap-2 rounded-md bg-cat-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-cat-600 focus:outline-none focus:ring-2 focus:ring-cat-500 focus:ring-offset-2 disabled:opacity-50"
                                 >
+                                    {channelProcessing && (
+                                        <Spinner className="h-4 w-4" />
+                                    )}
                                     {channelProcessing
                                         ? "Saving..."
                                         : "Save Channels"}
@@ -329,7 +329,6 @@ export default function Show({ asset, availableChannels }) {
                         </form>
                     </div>
 
-                    {/* Custom Fields 패널 */}
                     <div className="bg-white p-6 shadow-sm sm:rounded-lg">
                         <div className="flex items-center justify-between border-b pb-4 mb-4">
                             <h3 className="text-lg font-medium text-gray-900">
@@ -402,8 +401,11 @@ export default function Show({ asset, availableChannels }) {
                                     <button
                                         type="submit"
                                         disabled={cfProcessing}
-                                        className="inline-flex justify-center rounded-md bg-gray-800 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-700 disabled:opacity-50"
+                                        className="inline-flex items-center justify-center gap-2 rounded-md bg-gray-800 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-700 disabled:opacity-50"
                                     >
+                                        {cfProcessing && (
+                                            <Spinner className="h-4 w-4" />
+                                        )}
                                         {cfProcessing
                                             ? "Saving..."
                                             : "Save Fields"}
@@ -414,7 +416,6 @@ export default function Show({ asset, availableChannels }) {
                     </div>
                 </div>
 
-                {/* 우측 패널 (파일 미리보기 및 업로드/다운로드) */}
                 <div className="w-full lg:w-1/2">
                     <div className="bg-white p-6 shadow-sm sm:rounded-lg sticky top-6">
                         <div className="flex items-center justify-between border-b pb-4 mb-4">
@@ -445,7 +446,6 @@ export default function Show({ asset, availableChannels }) {
                                     {asset.file_url}
                                 </p>
 
-                                {/* 올바르게 배치된 다운로드 및 삭제 버튼 */}
                                 <div className="mt-6 flex justify-center gap-4 w-full">
                                     <a
                                         href={route(
@@ -509,8 +509,11 @@ export default function Show({ asset, availableChannels }) {
                                     <button
                                         type="submit"
                                         disabled={fileProcessing}
-                                        className="inline-flex flex-1 justify-center rounded-md bg-cat-500 px-6 py-2 text-sm font-medium text-white shadow-sm hover:bg-cat-600 disabled:opacity-50"
+                                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-md bg-cat-500 px-6 py-2 text-sm font-medium text-white shadow-sm hover:bg-cat-600 disabled:opacity-50"
                                     >
+                                        {fileProcessing && (
+                                            <Spinner className="h-4 w-4" />
+                                        )}
                                         {fileProcessing
                                             ? "Uploading..."
                                             : "Upload File"}
