@@ -23,13 +23,13 @@ class ChannelController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
         ]);
 
         $channel = Channel::create([
             'workspace_id' => $request->user()->workspace_id,
-            'name' => $request->name,
+            'name' => $validated['name'],
         ]);
 
         ActivityLog::create([
@@ -38,7 +38,7 @@ class ChannelController extends Controller
             'action' => 'CREATED',
             'subject_type' => Channel::class,
             'subject_id' => $channel->id,
-            'description' => "Created channel: {$channel->name}",
+            'description' => "Created new channel: {$channel->name}",
         ]);
 
         return back()->with('success', 'Channel created successfully.');
@@ -46,15 +46,16 @@ class ChannelController extends Controller
 
     public function update(Request $request, Channel $channel)
     {
-        $request->validate([
+        if ($channel->workspace_id !== $request->user()->workspace_id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
         ]);
 
         $oldName = $channel->name;
-
-        $channel->update([
-            'name' => $request->name,
-        ]);
+        $channel->update($validated);
 
         ActivityLog::create([
             'workspace_id' => $request->user()->workspace_id,
@@ -70,9 +71,11 @@ class ChannelController extends Controller
 
     public function destroy(Request $request, Channel $channel)
     {
-        $channelName = $channel->name;
+        if ($channel->workspace_id !== $request->user()->workspace_id) {
+            abort(403);
+        }
 
-        $channel->assets()->detach();
+        $channelName = $channel->name;
         $channel->delete();
 
         ActivityLog::create([
