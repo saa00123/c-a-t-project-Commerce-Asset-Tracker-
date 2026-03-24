@@ -6,24 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->foreignUuid('workspace_id')->nullable()->constrained('workspaces')->cascadeOnDelete();
-            $table->string('role')->default('Admin')->comment('Admin, Editor, Viewer');
+            $table->foreignUuid('workspace_id')->nullable()->constrained()->onDelete('cascade');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            $table->dropForeign(['workspace_id']);
+            $table->dropColumn('workspace_id');
         });
     }
 };

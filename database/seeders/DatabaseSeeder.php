@@ -3,8 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use App\Models\Workspace;
-use App\Models\Product;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -12,29 +10,30 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $workspace = Workspace::create([
-            'name' => 'C.A.T. Default Workspace',
-            'plan_tier' => 'Pro',
+        User::create([
+            'name' => 'Supervisor',
+            'email' => 'supervisor@admin.com',
+            'password' => Hash::make('supervisor'),
+            'role' => 'admin',
+            'is_approved' => true,
         ]);
+
+        for ($i = 1; $i <= 3; $i++) {
+            User::create([
+                'name' => "Test User {$i}",
+                'email' => "test{$i}@cat.com",
+                'password' => Hash::make('password'),
+                'role' => 'user',
+                'is_approved' => true,
+            ]);
+        }
 
         User::create([
-            'name' => 'Admin',
-            'email' => 'admin@cat.com',
+            'name' => 'Pending User',
+            'email' => 'wait@cat.com',
             'password' => Hash::make('password'),
-            'workspace_id' => $workspace->id,
-            'role' => 'Admin',
-        ]);
-
-        Product::create([
-            'workspace_id' => $workspace->id,
-            'sku' => 'SKU-1001',
-            'name' => 'Summer Basic T-Shirt',
-        ]);
-
-        Product::create([
-            'workspace_id' => $workspace->id,
-            'sku' => 'SKU-1002',
-            'name' => 'Classic Denim Pants',
+            'role' => 'user',
+            'is_approved' => false,
         ]);
     }
 }
