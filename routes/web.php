@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -87,6 +88,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/channels', [App\Http\Controllers\ChannelController::class, 'store'])->name('channels.store');
     Route::delete('/channels/{channel}', [App\Http\Controllers\ChannelController::class, 'destroy'])->name('channels.destroy');
     Route::resource('channels', App\Http\Controllers\ChannelController::class)->except(['create', 'show', 'edit']);
+});
+
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+    Route::patch('/users/{user}/approve', [AdminUserController::class, 'approve'])->name('users.approve');
+    Route::delete('/users/{user}', [AdminUserController::class, 'reject'])->name('users.reject');
 });
 
 require __DIR__.'/auth.php';
